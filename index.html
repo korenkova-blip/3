@@ -9,11 +9,16 @@
     table { border-collapse: collapse; margin: 10px auto; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
     th, td { border: 1px solid #999; padding: 6px; text-align: center; }
     .controls { margin-top: 10px; }
-    button { margin: 5px; padding: 10px 20px; background: #1976d2; color: #fff; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+    button { margin: 5px; padding: 8px 16px; background: #1976d2; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
     button:hover { background: #1565c0; }
     .activeRow { background-color: #fff176 !important; }
-    td button { padding: 5px 10px; font-size: 12px; background: #e53935; border-radius: 4px; }
+    td button { padding: 4px 8px; font-size: 12px; background: #e53935; border-radius: 4px; color: #fff; }
     td button:hover { background: #c62828; }
+    .moveBtn { background: #8e24aa; }
+    .moveBtn:hover { background: #6a1b9a; }
+    .instructions { max-width: 800px; margin: 10px auto; text-align: left; font-size: 14px; background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 6px; display: none; }
+    .toggleBtn { background: #ffa000; }
+    .toggleBtn:hover { background: #ef6c00; }
   </style>
 </head>
 <body>
@@ -27,6 +32,19 @@
 <div>
   <h3>Поточне слово:</h3>
   <div id="currentWord" style="font-size:20px; font-weight:bold; margin:10px;"></div>
+</div>
+
+<button class="toggleBtn" onclick="toggleInstructions()">Показати / Сховати інструкцію</button>
+<div class="instructions" id="instructions">
+  <b>Інструкція користування:</b>
+  <ul>
+    <li>Кожне правило має вигляд <code>ліва → права</code>. Якщо позначено «Кінцеве», алгоритм завершується після його застосування.</li>
+    <li>При натисканні <b>Старт</b> алгоритм виконується повністю до завершення.</li>
+    <li><b>Наступний крок</b> дозволяє виконувати покроково.</li>
+    <li>Кнопки ⬆️ та ⬇️ змінюють порядок правил у таблиці.</li>
+    <li>Кнопка ❌ видаляє правило.</li>
+    <li>Кнопка <b>Скинути</b> відновлює початкове слово, <b>Очистити</b> — повністю очищає.</li>
+  </ul>
 </div>
 
 <h3>Програма (правила):</h3>
@@ -46,14 +64,22 @@
       <td><input type="text" value="ab"></td>
       <td><input type="text" value="ba"></td>
       <td><input type="checkbox"></td>
-      <td><button onclick="deleteRow(this)">❌</button></td>
+      <td>
+        <button onclick="moveRow(this, -1)" class="moveBtn">⬆️</button>
+        <button onclick="moveRow(this, 1)" class="moveBtn">⬇️</button>
+        <button onclick="deleteRow(this)">❌</button>
+      </td>
     </tr>
     <tr>
       <td>2</td>
       <td><input type="text" value="aa"></td>
       <td><input type="text" value="b"></td>
       <td><input type="checkbox" checked></td>
-      <td><button onclick="deleteRow(this)">❌</button></td>
+      <td>
+        <button onclick="moveRow(this, -1)" class="moveBtn">⬆️</button>
+        <button onclick="moveRow(this, 1)" class="moveBtn">⬇️</button>
+        <button onclick="deleteRow(this)">❌</button>
+      </td>
     </tr>
   </tbody>
 </table>
@@ -130,7 +156,6 @@ function nextStep() {
     let {left, right, end} = program[i];
     let pos = currentWord.indexOf(left);
     if (pos !== -1) {
-      // застосовуємо правило
       currentWord = currentWord.replace(left, right);
       document.getElementById("currentWord").innerText = currentWord;
       highlightRow(i+1);
@@ -163,15 +188,38 @@ function addRow() {
     <td><input type="text"></td>
     <td><input type="text"></td>
     <td><input type="checkbox"></td>
-    <td><button onclick="deleteRow(this)">❌</button></td>
+    <td>
+      <button onclick="moveRow(this, -1)" class="moveBtn">⬆️</button>
+      <button onclick="moveRow(this, 1)" class="moveBtn">⬇️</button>
+      <button onclick="deleteRow(this)">❌</button>
+    </td>
   `;
 }
 
 function deleteRow(btn) {
   let row = btn.parentNode.parentNode;
   row.parentNode.removeChild(row);
+  renumberRows();
+}
+
+function moveRow(btn, dir) {
+  let row = btn.parentNode.parentNode;
+  let tbody = row.parentNode;
+  let index = Array.from(tbody.children).indexOf(row);
+  let newIndex = index + dir;
+  if (newIndex < 0 || newIndex >= tbody.children.length) return;
+  tbody.insertBefore(row, tbody.children[newIndex + (dir > 0 ? 1 : 0)]);
+  renumberRows();
+}
+
+function renumberRows() {
   let rows = document.querySelectorAll("#programTable tbody tr");
   rows.forEach((r, idx) => { r.cells[0].innerText = idx + 1; });
+}
+
+function toggleInstructions() {
+  let inst = document.getElementById("instructions");
+  inst.style.display = inst.style.display === "none" ? "block" : "none";
 }
 </script>
 
