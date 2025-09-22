@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Симулятор алгоритму Маркова</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 20px; text-align: center; background: #f0f4ff; color: #222; }
+    input[type="text"] { padding: 6px; border-radius: 6px; border: 1px solid #888; margin: 4px; }
+    table { border-collapse: collapse; margin: 10px auto; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    th, td { border: 1px solid #999; padding: 6px; text-align: center; }
+    .controls { margin-top: 10px; }
+    button { margin: 5px; padding: 10px 20px; background: #1976d2; color: #fff; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #1565c0; }
+    .activeRow { background-color: #fff176 !important; }
+    td button { padding: 5px 10px; font-size: 12px; background: #e53935; border-radius: 4px; }
+    td button:hover { background: #c62828; }
+  </style>
+</head>
+<body>
+
+<h1>📝 Симулятор алгоритму Маркова</h1>
+
+<h3>Вхідне слово:</h3>
+<input type="text" id="inputWord" placeholder="Наприклад: aab">
+<button onclick="insertWord()">Вставити</button>
+
+<div>
+  <h3>Поточне слово:</h3>
+  <div id="currentWord" style="font-size:20px; font-weight:bold; margin:10px;"></div>
+</div>
+
+<h3>Програма (правила):</h3>
+<table id="programTable">
+  <thead>
+    <tr>
+      <th>№</th>
+      <th>Ліва частина</th>
+      <th>Права частина</th>
+      <th>Кінцеве</th>
+      <th>Дія</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><input type="text" value="ab"></td>
+      <td><input type="text" value="ba"></td>
+      <td><input type="checkbox"></td>
+      <td><button onclick="deleteRow(this)">❌</button></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><input type="text" value="aa"></td>
+      <td><input type="text" value="b"></td>
+      <td><input type="checkbox" checked></td>
+      <td><button onclick="deleteRow(this)">❌</button></td>
+    </tr>
+  </tbody>
+</table>
+<button onclick="addRow()">Додати правило</button>
+
+<div class="controls">
+  <button onclick="startMachine()">Старт</button>
+  <button onclick="nextStep()">Наступний крок</button>
+  <button onclick="resetMachine()">Скинути</button>
+  <button onclick="clearAll()">Очистити</button>
+</div>
+
+<script>
+let currentWord = "";
+let initialWord = "";
+let halted = false;
+
+function insertWord() {
+  initialWord = document.getElementById("inputWord").value.trim();
+  currentWord = initialWord;
+  halted = false;
+  document.getElementById("currentWord").innerText = currentWord;
+  highlightRow(0);
+}
+
+function resetMachine() {
+  if (!initialWord) {
+    alert("Спочатку введіть вхідне слово.");
+    return;
+  }
+  currentWord = initialWord;
+  halted = false;
+  document.getElementById("currentWord").innerText = currentWord;
+  highlightRow(0);
+}
+
+function clearAll() {
+  document.getElementById("inputWord").value = "";
+  currentWord = "";
+  initialWord = "";
+  halted = false;
+  document.getElementById("currentWord").innerText = "";
+  highlightRow(0);
+  document.querySelector("#programTable tbody").innerHTML = "";
+}
+
+function getProgram() {
+  let rows = document.querySelectorAll("#programTable tbody tr");
+  let program = [];
+  rows.forEach(row => {
+    let left = row.cells[1].querySelector("input").value;
+    let right = row.cells[2].querySelector("input").value;
+    let end = row.cells[3].querySelector("input").checked;
+    program.push({left: left, right: right, end: end});
+  });
+  return program;
+}
+
+function highlightRow(rowNum) {
+  let rows = document.querySelectorAll("#programTable tbody tr");
+  rows.forEach((row, idx) => {
+    row.classList.toggle("activeRow", idx === rowNum - 1);
+  });
+}
+
+function nextStep() {
+  if (halted) {
+    alert("Алгоритм завершився.");
+    return;
+  }
+  let program = getProgram();
+  let applied = false;
+  for (let i = 0; i < program.length; i++) {
+    let {left, right, end} = program[i];
+    let pos = currentWord.indexOf(left);
+    if (pos !== -1) {
+      // застосовуємо правило
+      currentWord = currentWord.replace(left, right);
+      document.getElementById("currentWord").innerText = currentWord;
+      highlightRow(i+1);
+      applied = true;
+      if (end) {
+        halted = true;
+        alert("Алгоритм завершився (кінцеве правило).");
+      }
+      return;
+    }
+  }
+  if (!applied) {
+    halted = true;
+    alert("Жодне правило не застосоване. Алгоритм завершився.");
+  }
+}
+
+function startMachine() {
+  while (!halted) {
+    nextStep();
+  }
+}
+
+function addRow() {
+  let table = document.querySelector("#programTable tbody");
+  let rowCount = table.rows.length + 1;
+  let row = table.insertRow();
+  row.innerHTML = `
+    <td>${rowCount}</td>
+    <td><input type="text"></td>
+    <td><input type="text"></td>
+    <td><input type="checkbox"></td>
+    <td><button onclick="deleteRow(this)">❌</button></td>
+  `;
+}
+
+function deleteRow(btn) {
+  let row = btn.parentNode.parentNode;
+  row.parentNode.removeChild(row);
+  let rows = document.querySelectorAll("#programTable tbody tr");
+  rows.forEach((r, idx) => { r.cells[0].innerText = idx + 1; });
+}
+</script>
+
+</body>
+</html>
